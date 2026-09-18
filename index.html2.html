@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة مهمة علماء الوراثة - سر الصفات الموروثة</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Tajawal', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background: #0d1b1e;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(27, 77, 62, 0.5) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(138, 43, 226, 0.35) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(0, 240, 255, 0.15) 0px, transparent 50%);
+            min-height: 100vh;
+        }
+
+        /* Glassmorphic Cards */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .neon-border {
+            border: 1px solid #00f0ff;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+        }
+
+        .neon-text-cyan {
+            color: #00f0ff;
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+        }
+
+        .neon-text-gold {
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        /* Punnett Square Table Styles */
+        .punnett-grid {
+            display: grid;
+            grid-template-columns: 60px 1fr 1fr;
+            grid-template-rows: 60px 1fr 1fr;
+            gap: 8px;
+        }
+
+        .punnett-cell {
+            background: rgba(30, 41, 59, 0.9);
+            border: 2px solid rgba(0, 240, 255, 0.3);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.25rem;
+            transition: all 0.2s ease;
+        }
+
+        .option-btn {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .option-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 240, 255, 0.25);
+            border-color: #00f0ff;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1b4d3e;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="text-slate-100 flex flex-col justify-between min-h-screen p-2 sm:p-4 overflow-x-hidden">
+
+    <!-- Top HUD Bar -->
+    <header class="w-full max-w-5xl mx-auto mb-4">
+        <div class="glass-panel rounded-2xl p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3">
+            <!-- Game Title & Player Badge -->
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-emerald-600 flex items-center justify-center text-2xl shadow-lg border border-cyan-300/40">
+                    🧬
+                </div>
+                <div>
+                    <h1 class="font-black text-base sm:text-xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-purple-400">
+                        مهمة علماء الوراثة
+                    </h1>
+                    <span id="rank-badge" class="inline-block px-2 py-0.5 text-xs font-bold bg-amber-500/20 text-amber-300 rounded-md border border-amber-500/30">
+                        🔍 باحث مبتدئ
+                    </span>
+                </div>
+            </div>
+
+            <!-- Score & Progress Stats -->
+            <div class="flex items-center gap-4 sm:gap-6 bg-slate-900/60 px-4 py-2 rounded-xl border border-slate-700/50">
+                <div class="text-center">
+                    <div class="text-xs text-slate-400 font-semibold">النقاط</div>
+                    <div id="score-display" class="text-xl sm:text-2xl font-black neon-text-gold">0</div>
+                </div>
+                <div class="h-8 w-px bg-slate-700"></div>
+                <div class="text-center">
+                    <div class="text-xs text-slate-400 font-semibold">المرحلة</div>
+                    <div id="stage-display" class="text-lg sm:text-xl font-bold text-cyan-400">1 / 8</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-slate-800/80 rounded-full h-2.5 mt-2 border border-slate-700/50 overflow-hidden">
+            <div id="progress-bar" class="bg-gradient-to-r from-cyan-500 via-teal-400 to-purple-500 h-2.5 rounded-full transition-all duration-500 ease-out" style="width: 12.5%"></div>
+        </div>
+    </header>
+
+    <!-- Main Game Container -->
+    <main class="w-full max-w-5xl mx-auto flex-grow flex flex-col justify-center my-2">
+
+        <!-- Welcome Screen -->
+        <div id="start-screen" class="glass-panel rounded-3xl p-6 sm:p-10 text-center max-w-2xl mx-auto my-auto border-cyan-500/30 relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 w-40 h-40 bg-purple-600/20 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-cyan-600/20 rounded-full blur-3xl"></div>
+
+            <div class="w-24 h-24 mx-auto mb-6 bg-emerald-950/80 border-2 border-cyan-400/50 rounded-2xl flex items-center justify-center text-5xl shadow-2xl animate-bounce">
+                🔬
+            </div>
+
+            <h2 class="text-2xl sm:text-4xl font-extrabold mb-4 text-white">
+                سر الصفات الموروثة في مختبر مندل
+            </h2>
+
+            <p class="text-slate-300 text-sm sm:text-base leading-relaxed mb-6 bg-slate-900/60 p-4 rounded-2xl border border-slate-800 text-right">
+                أهلاً بك يا عالم الوراثة الناشئ! لقد تم اختيارك للانضمام إلى فريق أبحاث مختبر مندل السرية. أمامك شفرة وراثية غامضة تحكم صفات أجيال نباتات البازلاء. مهمتك هي تحليل الأدلة، فك شفرات الأليلات، وإكمال مربعات بانيت لاكتشاف سر انتقال الصفات الموروثة. هل أنت جاهز؟
+            </p>
+
+            <div class="grid grid-cols-2 gap-3 max-w-md mx-auto mb-8 text-xs text-slate-300 text-right">
+                <div class="bg-slate-900/40 p-2.5 rounded-xl border border-slate-800 flex items-center gap-2">
+                    <span class="text-lg">🎯</span> إجابة صحيحة أولى: +10 نقاط
+                </div>
+                <div class="bg-slate-900/40 p-2.5 rounded-xl border border-slate-800 flex items-center gap-2">
+                    <span class="text-lg">💡</span> تلميح مجهري متوفر
+                </div>
+            </div>
+
+            <button id="start-game-btn" class="w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-400 hover:to-cyan-500 text-slate-950 font-black text-xl rounded-2xl shadow-xl transform transition hover:scale-105 active:scale-95 border border-cyan-300">
+                بدء المنهج العلمي 🚀
+            </button>
+        </div>
+
+        <!-- Question / Interactive Stage Screen -->
+        <div id="quiz-card" class="glass-panel rounded-3xl p-4 sm:p-8 hidden relative flex-col justify-between min-h-[480px]">
+            <!-- Stage Banner -->
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                <div class="flex items-center gap-2">
+                    <span id="stage-icon" class="text-2xl">🔬</span>
+                    <h2 id="stage-title" class="font-bold text-lg sm:text-xl text-cyan-300">المرحلة 1: مختبر الملاحظة</h2>
+                </div>
+                <button id="hint-btn" class="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition">
+                    <span>🔬 الملاحظة الذكية (تلميح)</span>
+                </button>
+            </div>
+
+            <!-- Interactive Punnett Container (Shows when applicable) -->
+            <div id="punnett-interactive-container" class="hidden mb-4 p-4 bg-slate-900/80 rounded-2xl border border-purple-500/30">
+                <h3 class="text-center font-bold text-sm text-purple-300 mb-3">مربع بانيت التفاعلي ($Pp \times Pp$)</h3>
+                <div class="punnett-grid max-w-xs mx-auto">
+                    <div class="punnett-cell bg-purple-900/40 text-purple-300">✕</div>
+                    <div class="punnett-cell bg-purple-900/30 text-cyan-400">P</div>
+                    <div class="punnett-cell bg-purple-900/30 text-cyan-400">p</div>
+                    
+                    <div class="punnett-cell bg-purple-900/30 text-cyan-400">P</div>
+                    <div class="punnett-cell text-emerald-400 font-black" id="cell-1">[1] PP</div>
+                    <div class="punnett-cell text-purple-300" id="cell-2">[2] Pp</div>
+                    
+                    <div class="punnett-cell bg-purple-900/30 text-cyan-400">p</div>
+                    <div class="punnett-cell text-purple-300" id="cell-3">[3] Pp</div>
+                    <div class="punnett-cell text-pink-400 font-black" id="cell-4">[4] pp</div>
+                </div>
+            </div>
+
+            <!-- Data Table Container (For Stage 7) -->
+            <div id="data-table-container" class="hidden mb-4 p-3 bg-slate-900/80 rounded-2xl border border-teal-500/30 overflow-x-auto">
+                <table class="w-full text-center text-xs sm:text-sm">
+                    <thead>
+                        <tr class="border-b border-slate-700 text-teal-300 bg-slate-800/50">
+                            <th class="p-2">الطراز الجيني</th>
+                            <th class="p-2">عدد النباتات (العينة = 100)</th>
+                            <th class="p-2">الطراز الظاهري المتوقع</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800">
+                        <tr><td class="p-2 font-bold text-cyan-400">PP</td><td class="p-2">26</td><td class="p-2">أرجواني (سائد نقي)</td></tr>
+                        <tr><td class="p-2 font-bold text-purple-400">Pp</td><td class="p-2">49</td><td class="p-2">أرجواني (سائد هجين)</td></tr>
+                        <tr><td class="p-2 font-bold text-pink-400">pp</td><td class="p-2">25</td><td class="p-2">أبيض (متنحي)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Question Prompt Box -->
+            <div class="bg-slate-900/70 p-4 sm:p-5 rounded-2xl border border-slate-800 mb-4">
+                <div id="question-number" class="text-xs font-extrabold text-cyan-400 mb-1">سؤال 1 من 4 في هذه المرحلة</div>
+                <h3 id="question-text" class="text-base sm:text-lg font-bold text-slate-100 leading-snug">
+                    جاري تحميل السؤال...
+                </h3>
+            </div>
+
+            <!-- Options Grid -->
+            <div id="options-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                <!-- Options injected via JS -->
+            </div>
+
+            <!-- Feedback Banner -->
+            <div id="feedback-banner" class="hidden p-4 rounded-2xl mb-4 border transition-all text-sm leading-relaxed">
+                <div class="font-bold flex items-center gap-2 mb-1" id="feedback-title">
+                    <span>💡</span> التغذية الراجعة
+                </div>
+                <div id="feedback-text" class="text-slate-200"></div>
+            </div>
+
+            <!-- Next Button Footer -->
+            <div class="flex justify-end pt-2 border-t border-slate-800/80">
+                <button id="next-btn" class="hidden px-6 py-3 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 font-black rounded-xl shadow-lg transition transform hover:scale-105 active:scale-95">
+                    السؤال التالي ⬅️
+                </button>
+            </div>
+        </div>
+
+        <!-- Final Certificate & Game Over Screen -->
+        <div id="result-screen" class="glass-panel rounded-3xl p-6 sm:p-10 text-center max-w-2xl mx-auto hidden border-amber-500/30 my-auto">
+            <div id="final-badge-icon" class="text-7xl mb-4 animate-bounce">🏆</div>
+            <h2 id="final-title" class="text-2xl sm:text-4xl font-extrabold text-amber-300 mb-2">
+                خبير مختبر مندل!
+            </h2>
+            <p id="final-subtitle" class="text-slate-300 text-sm sm:text-base mb-6">
+                لقد فككت الشفرات الوراثية بنجاح استثنائي!
+            </p>
+
+            <div class="grid grid-cols-2 gap-4 bg-slate-900/80 p-4 rounded-2xl border border-slate-800 mb-6">
+                <div class="text-right">
+                    <span class="text-xs text-slate-400 block">مجموع النقاط:</span>
+                    <span id="final-score" class="text-2xl font-black text-amber-400">0</span>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs text-slate-400 block">اللقب المستحق:</span>
+                    <span id="final-rank" class="text-lg font-bold text-cyan-300">خبير وراثي</span>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/50 p-4 rounded-2xl border border-slate-800 text-right text-xs space-y-2 mb-6 max-h-40 overflow-y-auto">
+                <div class="font-bold text-slate-300 mb-2">📜 سجل الشارات والمراحل المطلوبة:</div>
+                <div id="badges-list" class="grid grid-cols-2 gap-2">
+                    <!-- Badges injected via JS -->
+                </div>
+            </div>
+
+            <button id="restart-game-btn" class="px-8 py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg transition transform hover:scale-105 active:scale-95">
+                إعادة التحدي والمغامرة 🔄
+            </button>
+        </div>
+    </main>
+
+    <!-- Hint Modal Box -->
+    <div id="hint-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+        <div class="glass-panel rounded-3xl p-6 max-w-md w-full border-amber-500/40 text-right">
+            <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-2">
+                <h3 class="font-bold text-amber-400 flex items-center gap-2">
+                    <span>🔬</span> الملاحظة الذكية للباحث
+                </h3>
+                <button id="close-hint-btn" class="text-slate-400 hover:text-white text-lg">✕</button>
+            </div>
+            <p id="hint-text-content" class="text-slate-200 text-sm leading-relaxed mb-6">
+                تلميح مجهري سيوجهك للإجابة الصحيحة...
+            </p>
+            <button id="confirm-hint-btn" class="w-full py-2.5 bg-amber-500 text-slate-950 font-bold rounded-xl hover:bg-amber-400 transition">
+                فهمت الملاحظة 👍
+            </button>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Web Audio API Synthesizer Sound FX
+        class GameAudio {
+            constructor() {
+                this.ctx = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            playCorrect() {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.08); // E5
+                osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.16); // G5
+                osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.28); // C6
+
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.35);
+            }
+
+            playWrong() {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.exponentialRampToValueAtTime(140, now + 0.2);
+
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            }
+
+            playClick() {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.04);
+
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            }
+        }
+
+        const audio = new GameAudio();
+
+        // Comprehensive Question Dataset based on "مهمة علماء الوراثة"
+        const gameStagesData = [
+            {
+                id: 1,
+                title: "المرحلة 1: مختبر الملاحظة (Observation Lab)",
+                icon: "🔬",
+                hint: "فكر في النسبة الظاهرة بالجيل الأول: ظهور لون واحد فقط يلغي الفكرة المزيجية ويؤكد وجود أليل حجب الآخر.",
+                questions: [
+                    {
+                        q: "عند إجراء تزاوج بين نبات بازلاء نقي طافِ أزهار أرجوانية مع نبات أبيض الأزهار نقي، ظهرت جميع نباتات الجيل الأول بأزهار أرجوانية فقط. ما الدليل العلمي الذي تقدمه هذه الملاحظة؟",
+                        opts: [
+                            "أ) الصفة البيضاء اختفت تماماً ولن تظهر في الأجيال القادمة.",
+                            "ب) صفة الأزهار الأرجوانية حَجَبَت وأخفت تأثير صفة الأزهار البيضاء.",
+                            "ج) الأبوان يمتلكان نفس الطراز الجيني المسؤول عن لون الأزهار.",
+                            "د) أزهار الجيل الأول اكتسبت اللون الأرجواني نتيجة عوامل بيئية خارجية."
+                        ],
+                        correct: 1,
+                        exp: "صحيح! ظهور صفة واحدة في الجيل الأول يعني أنها صفة سائدة حجبت الصفة المتنحية دون أن تلغي وجودها الجيني."
+                    },
+                    {
+                        q: "أيّ من التغيرات التالية في نبات البازلاء يُصنَّف كصفة موروثة يمكن أن تنتقل للجيل التالي؟",
+                        opts: [
+                            "أ) ذبول بعض الأوراق نتيجة نقص كمية ري المياه.",
+                            "ب) كسر ساق النبات بسبب رياح قوية في المزرعة.",
+                            "ج) شكل القرون الملساء المحددة بتركيب الأليلات الجينية.",
+                            "د) تغير لون الأوراق إلى الأصفر بسبب نقص السماد."
+                        ],
+                        correct: 2,
+                        exp: "رائع! الصفات الموروثة هي التي تتحكم فيها الجينات والأليلات المأخوذة من الآباء، وليست التغيرات البيئية الطارئة."
+                    },
+                    {
+                        q: "لماذا كان اختيار مندل لنبات البازلاء تحديداً سبيلاً رئيسياً لنجاح تجاربه الوراثية؟",
+                        opts: [
+                            "أ) لأن جميع صفات نبات البازلاء متساوية في القوة ولا يوجد بها صفات سائدة.",
+                            "ب) لأن نبات البازلاء لا يتأثر مطلقاً بالظروف البيئية المحيطة به.",
+                            "ج) لوجود صفات متضادة واضحة وسهولة التلقيح الموجه بين أفراده.",
+                            "د) لأن نبات البازلاء ينتج فرداً واحداً فقط في كل جيل."
+                        ],
+                        correct: 2,
+                        exp: "ممتاز! وجود الصفات النقية المتباينة (مثل: أرجواني/أبيض، أملس/مجعد) مكنه من تتبع النمط بدقة."
+                    },
+                    {
+                        q: "ما الفرق الأساسي بين 'الصفة السائدة' و 'الصفة المتنحية' عند اجتماع أليلهما في فرد واحد؟",
+                        opts: [
+                            "أ) الصفة السائدة تتطلب وجود أليلين لتظهر، بينما المتنحية تكفي بأليل واحد.",
+                            "ب) الصفة السائدة تظهر بوجود أليل واحد منها على الأقل، بينما المتنحية تتطلب أليلين متنحيين.",
+                            "ج) الصفة السائدة تظهر دائماً بنسبة 25%، بينما المتنحية تظهر بنسبة 75%.",
+                            "د) الصفة السائدة تقتصر على الشكل الخارجي، بينما المتنحية تقتصر على التركيب الداخلي."
+                        ],
+                        correct: 1,
+                        exp: "استنتاج دقيق! الأليل السائد يطغى على الأليل المتنحي ويمنع ظاهرياً تعبيره إلا في حال غياب الأليل السائد تماماً."
+                    }
+                ]
+            },
+            {
+                id: 2,
+                title: "المرحلة 2: السائدة أم المتنحية؟ (Dominant vs Recessive)",
+                icon: "🧩",
+                hint: "الصفة المتنحية قد تختفي في الآباء تماماً وتظهر في الأبناء فقط عندما يلتقي أليلان متنحيان.",
+                questions: [
+                    {
+                        q: "إذا تم تزاوج نباتين كلاهما يحمل صفة القرون الخضراء، ونتج عن ذلك بضع نباتات ذات قرون صفراء. ما الوصف الأكثر دقة لصفة القرون الصفراء؟",
+                        opts: [
+                            "أ) صفة سائدة كانت مختفية في الآباء.",
+                            "ب) صفة متنحية كان يحمل أليلها كلا الأبوين دون أن تظهر عليهما.",
+                            "ج) صفة اكتسبها الأبناء نتيجة التغذية الزائدة.",
+                            "د) صفة سائدة ظهرت بسبب طفرة ناتجة عن التلقيح الذاتي."
+                        ],
+                        correct: 1,
+                        exp: "إجابة عليا! ظهور صفة جديدة في الأبناء غير ظاهرة في كِلا الأبوين يدل قطعياً على أنها صفة متنحية كان الأبوان يحملان أليلها غير الظاهر."
+                    },
+                    {
+                        q: "جدول صفات البازلاء يوضح أن البذور الملساء صفة سائدة (S) والمتجعدة متنحية (s). أي العبارات التالية صحيحة تماماً؟",
+                        opts: [
+                            "أ) النبات ذو البذور المتجعدة قد يحمل طرازاً جينياً نادراً يحتوي على أليل أملس.",
+                            "ب) البذور الملساء دائماً تكون نقية الجينات ولا تحمل أليلات متجعدة.",
+                            "ج) البذور المتجعدة دائماً تكون نقية ولا تظهر إلا بطراز جيني متماثل الأليلات المتنحية (ss).",
+                            "د) البذور الملساء تظهر بنسبة أقل من البذور المتجعدة في الطبيعة."
+                        ],
+                        correct: 2,
+                        exp: "أحسنت! الصفة المتنحية لا تظهر على الإطلاق ظاهرياً إلا إذا كان الطراز الجيني متماثل الأليلات المتنحية (ss)."
+                    },
+                    {
+                        q: "قام عالم وراثة بتزويج نبات محوري الأزهار مع نبات طرفي الأزهار، فكانت جميع النباتات الناتجة (100%) محورية الأزهار. ماذا نستنتج؟",
+                        opts: [
+                            "أ) صفة الأزهار المحورية سائدة على صفة الأزهار الطرفية.",
+                            "ب) صفة الأزهار الطرفية هي الصفة السائدة ولكنها لم تظهر.",
+                            "ج) كلا الصفاتين متساويتان في القوة والسيطرة.",
+                            "د) النباتات الناتجة تحمل أليلات سائدة فقط ولا تحمل أي أليل طرفي."
+                        ],
+                        correct: 0,
+                        exp: "صحيح! ظهور الصفة بنسبة 100% في الجيل الأول يؤكد أنها الصفة السائدة."
+                    },
+                    {
+                        q: "أي مما يلي يمثل وصفاً لـ 'الطراز الشكلي / الظاهري' وليس الطراز الجيني؟",
+                        opts: [
+                            "أ) امتلاك أليلين متماثلين PP.",
+                            "ب) وجود أليل سائد وأليل متنحي Pp.",
+                            "ج) لون الأزهار الأرجواني الملاحظ في الحقل.",
+                            "د) الشفرة الوراثية الموجودة داخل نواة الخلية."
+                        ],
+                        correct: 2,
+                        exp: "ممتاز! الطراز الظاهري هو الصفة الفيزيائية المرئية للنبات، بينما الطراز الجيني هو التشكيل الأليلي الخفي."
+                    }
+                ]
+            },
+            {
+                id: 3,
+                title: "المرحلة 3: فك شفرة P و p (Decoding Genotypes)",
+                icon: "🧬",
+                hint: "الرمز الكبير P يمثل الأليل السائد والأصغر p يمثل الأليل المتنحي.",
+                questions: [
+                    {
+                        q: "نبات يحمل الطراز الجيني Pp. أي عبارة تشرح حالة هذا النبات بدقة علمية؟",
+                        opts: [
+                            "أ) أزهاره بيضاء لأنه يحتوي على الأليل المتنحي p.",
+                            "ب) أزهاره أرجوانية وهو غير متماثل الأليلات (هجين) ويحمل أليل الصفة البيضاء.",
+                            "ج) أزهاره ذات لون مزيج بين الأرجواني والأبيض.",
+                            "د) أزهاره أرجوانية نقية ولا يمكنه إبراز أزهار بيضاء في أجياله القادمة."
+                        ],
+                        correct: 1,
+                        exp: "استنتاج رائع! وجود أليل P السائد يحدد اللون الظاهري (أرجواني)، لكن وجود p يجعله يحمل الصفة البيضاء كحامل للهجين."
+                    },
+                    {
+                        q: "إذا قارنت بين نباتين: الأول طرازه الجيني PP والثاني Pp، فما الشبه والاختلاف بينهما؟",
+                        opts: [
+                            "أ) يتشابهان في الطراز الجيني ويختلفان في الطراز الظاهري.",
+                            "ب) يتشابهان في الطراز الظاهري (كلاهما أرجواني) ويختلفان في الطراز الجيني.",
+                            "ج) لا يوجد أي تشابه بينهما في الشكل أو الجينات.",
+                            "د) النبات PP ينتج أزهاراً بيضاء والنبات Pp ينتج أزهاراً أرجوانية."
+                        ],
+                        correct: 1,
+                        exp: "بطل الوراثة! كلاهما يظهر باللون الأرجواني (طراز ظاهري متماثل) رغم اختلاف تركيبهما الأليلي الجيني."
+                    },
+                    {
+                        q: "حقل يحتوي على نبات بازلاء أبيض الأزهار. ما الطراز الجيني المؤكد لهذا النبات دون الحاجة لإجراء فحص مجهري؟",
+                        opts: [
+                            "أ) PP فقط.",
+                            "ب) Pp فقط.",
+                            "ج) pp فقط.",
+                            "د) يمكن أن يكون Pp أو pp."
+                        ],
+                        correct: 2,
+                        exp: "إجابة دقيقة! بما أن اللون الأبيض صفة متنحية، فلا يمكن أن تظهر ظاهرياً إلا إذا كان الطراز الجيني متماثل الأليلات المتنحية pp."
+                    },
+                    {
+                        q: "عند تكوين الأمشاج (الخلايا التناسلية) لنبات طرازه الجيني Pp، ما أنواع الأليلات التي تحتويها هذه الأمشاج؟",
+                        opts: [
+                            "أ) جميع الأمشاج تحتوي على الأليل P فقط.",
+                            "ب) جميع الأمشاج تحتوي على الأليلين P و p معاً في نفس المشيج.",
+                            "ج) 50% من الأمشاج تحمل الأليل P، و 50% تحمل الأليل p.",
+                            "د) 75% من الأمشاج تحمل P و 25% تحمل p."
+                        ],
+                        correct: 2,
+                        exp: "صحيح! أثناء الانقسام الخلوي وتكوين الأمشاج ينفصل الأليلان ليحمل كل مشيج أليلاً واحداً بنسبة متساوية."
+                    }
+                ]
+            },
+            {
+                id: 4,
+                title: "المرحلة 4: مختبر الجيل الأول (Pp x pp)",
+                icon: "🔎",
+                hint: "في التزاوج (Pp x pp)، الأمشاج هي (P, p) من الأب الأول و (p, p) من الأب الثاني. النواتج (Pp, Pp, pp, pp).",
+                questions: [
+                    {
+                        q: "تم إجراء تزاوج بين (Pp) و (pp). النواتج هي (Pp, Pp, pp, pp). ما نسبة النباتات المتوقعة بأزهار أرجوانية؟",
+                        opts: [
+                            "أ) 100%",
+                            "ب) 75%",
+                            "ج) 50%",
+                            "د) 25%"
+                        ],
+                        correct: 2,
+                        exp: "ممتاز! نلاحظ وجود طرازين Pp من أصل 4 نواتج، أي النصف تماماً (50%)."
+                    },
+                    {
+                        q: "لماذا يستحيل ظهور طراز جيني PP في أفراد الجيل الناتج من هذا التزاوج المحدد (Pp x pp)؟",
+                        opts: [
+                            "أ) لأن الصفة السائدة لا تنتقل عن طريق النبات الأرجواني الهجين.",
+                            "ب) لأن النبات الأبيض (pp) لا يمتلك أي أليل سائد P ليعطيه لأبنائه.",
+                            "ج) لأن الأليل P ينكسر أثناء التزاوج مع الأليل المتنحي.",
+                            "د) لأن البيئة تمنع التراكيب النقية في الجيل الأول."
+                        ],
+                        correct: 1,
+                        exp: "تفكير علمي متألق! الحصول على PP يتطلب أن يقدم كلا الأبوين أليلاً سائداً P، والأب الأبيض لا يملك سوى أليلات p."
+                    },
+                    {
+                        q: "إذا استبدلنا النبات الأرجواني الهجين (Pp) بنبات أرجواني نقي (PP) وتزاوج مع (pp)، فما النتيجة المتوقعة للجيل؟",
+                        opts: [
+                            "أ) 100% أزهار أرجوانية (جميعها طرازها الجيني Pp).",
+                            "ب) 50% أزهار أرجوانية و 50% أزهار بيضاء.",
+                            "ج) 75% أزهار بيضاء و 25% أزهار أرجوانية.",
+                            "د) 100% أزهار بيضاء نقية."
+                        ],
+                        correct: 0,
+                        exp: "رائع! النبات النقي PP يمنح أليلاً سائداً لجميع أفراد الجيل، فيسود اللون الأرجواني تماماً."
+                    },
+                    {
+                        q: "في التزاوج الأصلي (Pp x pp)، ما النسبة بين عدد النباتات أرجوانية الأزهار إلى بيضاء الأزهار؟",
+                        opts: [
+                            "أ) 3 : 1",
+                            "ب) 1 : 1",
+                            "ج) 1 : 2",
+                            "د) 4 : 0"
+                        ],
+                        correct: 1,
+                        exp: "إجابة صحيحة! النسبة هي 2 أرجواني : 2 أبيض، والتي تبسط رياضياً إلى 1 : 1."
+                    }
+                ]
+            },
+            {
+                id: 5,
+                title: "المرحلة 5: تحدي مربع بانيت (Punnett Square: Pp x Pp)",
+                icon: "🎯",
+                showPunnett: true,
+                hint: "مربع بانيت لتزاوج (Pp x Pp) يعطي 4 خانات: [1] PP, [2] Pp, [3] Pp, [4] pp.",
+                questions: [
+                    {
+                        q: "عند تقاطع الأليل P مع P في الخانة [1] داخل مربع بانيت الموضح أعلاه، ما الطراز الجيني والصفة الظاهرة؟",
+                        opts: [
+                            "أ) Pp - أزهار بيضاء.",
+                            "ب) PP - أزهار أرجوانية نقية.",
+                            "ج) pp - أزهار أرجوانية.",
+                            "د) Pp - أزهار مزيجية."
+                        ],
+                        correct: 1,
+                        exp: "ممتاز! اجتماع أليلين سائدين P + P ينتج طرازاً جينياً متماثلاً سائداً PP بأزهار أرجوانية."
+                    },
+                    {
+                        q: "في أي الخانات الرقمية داخل مربع بانيت يظهر الطراز الجيني الذي يمثل الصفة المتنحية (الأزهار البيضاء)؟",
+                        opts: [
+                            "أ) الخانة [1] فقط.",
+                            "ب) الخانتان [2] و [3].",
+                            "ج) الخانة [4] فقط (pp).",
+                            "د) الخانات [1] و [2] و [3]."
+                        ],
+                        correct: 2,
+                        exp: "صحيح! الخانة [4] تنتج عن التقاء p مع p فتتكون الأزهار البيضاء pp."
+                    },
+                    {
+                        q: "ما النسبة المئوية الدقيقة لظهور الطراز الجيني المتماثل المتنحي pp في هذا التزاوج؟",
+                        opts: [
+                            "أ) 75%",
+                            "ب) 50%",
+                            "ج) 25%",
+                            "د) 0%"
+                        ],
+                        correct: 2,
+                        exp: "دقيق جداً! مربع واحد من أصل 4 مربعات يمثل نسبة 25%."
+                    },
+                    {
+                        q: "ما النسبة المئوية الكلية للأفراد الذين تظهر لديهم الصفة السائدة (الأزهار الأرجوانية)؟",
+                        opts: [
+                            "أ) 25%",
+                            "ب) 50%",
+                            "ج) 75%",
+                            "د) 100%"
+                        ],
+                        correct: 2,
+                        exp: "رائع! الأفراد في المربعات [1] (PP)، [2] (Pp)، و [3] (Pp) جميعهم أرجوانيون، إذن النسبة 3/4 = 75%."
+                    },
+                    {
+                        q: "إذا أثمر هذا التزاوج وتكونت 1000 نبتة بازلاء، فما العدد المتوقع تقريبياً للنباتات ذات الأزهار البيضاء؟",
+                        opts: [
+                            "أ) 750 نبتة تقريباً.",
+                            "ب) 500 نبتة تقريباً.",
+                            "ج) 250 نبتة تقريباً.",
+                            "د) 100 نبتة تقريباً."
+                        ],
+                        correct: 2,
+                        exp: "تفكير رياضي وراثي مبهر! بما أن نسبة الصفة المتنحية هي 25%، فإن 1000 × 25% = 250 نبتة."
+                    }
+                ]
+            },
+            {
+                id: 6,
+                title: "المرحلة 6: مهمة المحقق الوراثي (Genetic Detective Case)",
+                icon: "🕵️‍♂️",
+                hint: "النمط الاختباري: لتحديد طراز صفة سائدة مجهولة النقاء، أجرِ تزاوجاً مع فرد متنحي (pp).",
+                questions: [
+                    {
+                        q: "مزارع يملك نبات أرجواني ويريد معرفة هل هو نقي (PP) أم هجين (Pp). ما نوع النبات الواجب تزويجه معه للحسم؟",
+                        opts: [
+                            "أ) تزويجه مع نبات أرجواني الأزهار نقي (PP).",
+                            "ب) تزويجه مع نبات أبيض الأزهار (pp).",
+                            "ج) قطف أزهار النبات ودراستها تحت المجهر فقط.",
+                            "د) تزويجه مع نبات أرجواني هجين آخر (Pp)."
+                        ],
+                        correct: 1,
+                        exp: "استنتاج عالي المستوى! هذا يسمى (تزاوج الاختبار)؛ فاستخدام النبات الأبيض المتنحي يُظهر فوراً ما إذا كان النبات الأرجواني يخفي أليلاً بيئياً p."
+                    },
+                    {
+                        q: "إذا قمت بالتزاوج التجريبي مع النبات الأبيض (pp) وظهرت بعض النباتات بيضاء، فما الدليل القاطع للحظر؟",
+                        opts: [
+                            "أ) نبات المزارع حتماً أرجواني هجين (Pp).",
+                            "ب) نبات المزارع حتماً أرجواني نقي (PP).",
+                            "ج) التجربة فشلت وأعطت نتيجة خاطئة.",
+                            "د) النبات الأبيض كان يحمل أليلاً سائداً."
+                        ],
+                        correct: 0,
+                        exp: "أحسنت يا محقق! ظهور نبات أبيض يستلزم حصوله على أليل p من كلا الأبوين، مما يثبت أن الأب الأرجواني يحمل p."
+                    },
+                    {
+                        q: "لو كانت جميع أفراد العينة الناتجة (مثلاً 200 نبتة) ذات أزهار أرجوانية دون ظهور أي زهرة بيضاء، ما الاستنتاج الأرجح؟",
+                        opts: [
+                            "أ) نبات المزارع طرازه الجيني pp.",
+                            "ب) نبات المزارع طرازه الجيني نقي سائد PP بنسبة احتمال عالية جداً.",
+                            "ج) النبات يغير جيناته بحسب الرغبة.",
+                            "د) أليل الأزهار البيضاء أصبح أليلاً سائداً."
+                        ],
+                        correct: 1,
+                        exp: "تحليل صحيح! عدم ظهور الصفة المتنحية في عينات كبيرة يعني أن الأب السائد لم يمنح سوى الأليل P."
+                    },
+                    {
+                        q: "طالب قال: 'يمكن لنباتين بيضاوي الأزهار (pp x pp) إنتاج نبات أرجواني إذا زاد السماد'. كيف تصحح خطأه؟",
+                        opts: [
+                            "أ) كلام الطالب صحيح لأن التربة تغير الطراز الجيني فوراً.",
+                            "ب) التتقرير خاطئ؛ لأن الأبوين البيضاوين لا يملكان أي أليل سائد P، والصفات لا تتغير بنوع السماد.",
+                            "ج) التقرير خاطئ لأن النبات الأبيض ينتج أرجوانياً بالصيف فقط.",
+                            "د) التقرير صحيح بشرط أن تكون النبتة طويلة."
+                        ],
+                        correct: 1,
+                        exp: "تصحيح علمي دقيق! التأثيرات البيئية لا تصنع أليلات سائدة معدومة من الأصل في الشفرة الوراثية للأبوين."
+                    }
+                ]
+            },
+            {
+                id: 7,
+                title: "المرحلة 7: تحدي البيانات والرسم البياني (Data Challenge)",
+                icon: "📊",
+                showDataTable: true,
+                hint: "اجمع أعداد الأرجواني (26 + 49 = 75) وقارنها بالأبيض (25) لتحصل على نسبة 3 : 1.",
+                questions: [
+                    {
+                        q: "بالنظر لجدول بيانات الجيل الثاني أعلاه (100 نبات)، ما النسبة العملية التقريبية بين حاملي الصفة السائدة والمتنحية؟",
+                        opts: [
+                            "أ) 50 أرجواني : 50 أبيض (1:1)",
+                            "ب) 75 أرجواني : 25 أبيض (3:1 تقريباً)",
+                            "ج) 100 أرجواني : 0 أبيض (4:0)",
+                            "د) 25 أرجواني : 75 أبيض (1:3)"
+                        ],
+                        correct: 1,
+                        exp: "ممتاز! مجموع حاملي اللون الأرجواني هو 26 + 49 = 75 نبات مقابل 25 نبات أبيض، وهي تطابق النسبة النظرية لمندل 3 : 1."
+                    },
+                    {
+                        q: "أي التراكيب الجينية التالية سجل أعلى تكرار بين نباتات الجيل في الجدول، وماذا يمثل؟",
+                        opts: [
+                            "أ) PP ويمثل الصفة النقية السائدة.",
+                            "ب) Pp ويمثل الطراز الهجين غير متماثل الأليلات.",
+                            "ج) pp ويمثل الصفة النقية المتنحية.",
+                            "د) جميع التراكيب الجينية ظهرت بأعداد متساوية تماماً."
+                        ],
+                        correct: 1,
+                        exp: "قراءة بيانية ممتازة! Pp سجل 49 نبتة (نحو 50% من العينة) وهو ما يتفق مع احتمالات مربع بانيت."
+                    },
+                    {
+                        q: "إذا أردنا تحويل أعداد أزهار العينة إلى رسم بياني قطاعي (Pie Chart) بحسب 'الطراز الظاهري'، فكيف ستكون الحصص؟",
+                        opts: [
+                            "أ) نصف الدائرة أرجواني ونصفها الآخر أبيض.",
+                            "ب) ثلاثة أرباع الدائرة (75%) باللون الأرجواني، والربع المتبقي (25%) باللون الأبيض.",
+                            "ج) الدائرة كاملة باللون الأرجواني.",
+                            "د) ربع الدائرة أرجواني وثلاثة أرباعها أبيض."
+                        ],
+                        correct: 1,
+                        exp: "صحيح! الرسم البياني يظهر الحجم الظاهري بنسبة 75% إلى 25%."
+                    },
+                    {
+                        q: "ادعى باحث أن الأليل المتنحي p سيختفي تماماً بعد 5 أجيال. كيف ترد عليه بناءً على تحليلك للبيانات؟",
+                        opts: [
+                            "أ) ادعاؤه صحيح لأن عدد النباتات البيضاء قليل.",
+                            "ب) ادعاؤه خاطئ؛ لأن الأليل p مستمر في الانتقال مختفياً داخل النباتات الهجينة (Pp) وسيظهر دائماً عند تزاوجها.",
+                            "ج) ادعاؤه صحيح لأن الجينات المتنحية تدمر نفسها تلقائياً.",
+                            "د) ادعاؤه خاطئ لأن اللون الأبيض ستحوله الشمس إلى أرجواني."
+                        ],
+                        correct: 1,
+                        exp: "عمق علمي فريد! الأليل المتنحي لا يتلف ولا يختفي بل يختبئ في الأفراد الهجناء لينتقل بأمان للأجيال القادمة."
+                    }
+                ]
+            },
+            {
+                id: 8,
+                title: "المرحلة 8: المهمة النهائية - سر مختبر مندل (Master Task)",
+                icon: "🏆",
+                hint: "القرون الخضراء الهجينة طرازها Gg. عند تزاوج (Gg x Gg) النسبة الجينية هي (1 GG : 2 Gg : 1 gg).",
+                questions: [
+                    {
+                        q: "إذا أخذنا نبتتين من الأبناء ذوي القرون الخضراء الهجينة (Gg) وأجرينا بينهما تلقيحاً ذاتياً، فما الاستنتاج الشامل الصحيح للجيل الجديد؟",
+                        opts: [
+                            "أ) جميع الأبناء سيكونون بقرون خضراء نقية GG بنسبة 100%.",
+                            "ب) ستظهر القرون الخضراء والصفراء بنسبة متساوية 50% : 50%.",
+                            "ج) سيظهر النمط الظاهري بنسبة 75% قرون خضراء و 25% قرون صفراء، بنسبة جينية (1 GG : 2 Gg : 1 gg).",
+                            "د) ستنتج قرون صفراء فقط بنسبة 100% لغياب الأليلات النقية."
+                        ],
+                        correct: 2,
+                        exp: "مبروك يا خبير الوراثة! لقد فككت الشفرة النهائية بمثالية وأثبت استحقاقك لأعلى وسام في مختبر مندل! 🏆🧬"
+                    }
+                ]
+            }
+        ];
+
+        // Game State Variables
+        let currentStageIdx = 0;
+        let currentQuestionInStage = 0;
+        let totalScore = 0;
+        let firstAttempt = true;
+
+        // DOM Element Selectors
+        const startScreen = document.getElementById('start-screen');
+        const quizCard = document.getElementById('quiz-card');
+        const resultScreen = document.getElementById('result-screen');
+        const scoreDisplay = document.getElementById('score-display');
+        const stageDisplay = document.getElementById('stage-display');
+        const progressBar = document.getElementById('progress-bar');
+        const rankBadge = document.getElementById('rank-badge');
+
+        const stageTitle = document.getElementById('stage-title');
+        const stageIcon = document.getElementById('stage-icon');
+        const questionNumber = document.getElementById('question-number');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackBanner = document.getElementById('feedback-banner');
+        const feedbackText = document.getElementById('feedback-text');
+        const nextBtn = document.getElementById('next-btn');
+
+        const punnettContainer = document.getElementById('punnett-interactive-container');
+        const dataTableContainer = document.getElementById('data-table-container');
+
+        const hintModal = document.getElementById('hint-modal');
+        const hintTextContent = document.getElementById('hint-text-content');
+
+        // Start Game
+        document.getElementById('start-game-btn').addEventListener('click', () => {
+            audio.init();
+            audio.playClick();
+            startScreen.classList.add('hidden');
+            quizCard.classList.remove('hidden');
+            quizCard.classList.add('flex');
+            currentStageIdx = 0;
+            currentQuestionInStage = 0;
+            totalScore = 0;
+            updateHUD();
+            loadQuestion();
+        });
+
+        function updateHUD() {
+            scoreDisplay.innerText = totalScore;
+            stageDisplay.innerText = `${currentStageIdx + 1} / ${gameStagesData.length}`;
+            
+            const progressPct = ((currentStageIdx + 1) / gameStagesData.length) * 100;
+            progressBar.style.width = `${progressPct}%`;
+
+            // Update Rank Badge based on current points
+            if (totalScore >= 100) {
+                rankBadge.innerText = '🏆 خبير مختبر مندل';
+                rankBadge.className = 'inline-block px-2 py-0.5 text-xs font-bold bg-amber-500/30 text-amber-300 rounded-md border border-amber-400';
+            } else if (totalScore >= 70) {
+                rankBadge.innerText = '🔬 عالم وراثة ناشئ';
+                rankBadge.className = 'inline-block px-2 py-0.5 text-xs font-bold bg-cyan-500/30 text-cyan-300 rounded-md border border-cyan-400';
+            } else if (totalScore >= 40) {
+                rankBadge.innerText = '🧬 محقق وراثي';
+                rankBadge.className = 'inline-block px-2 py-0.5 text-xs font-bold bg-purple-500/30 text-purple-300 rounded-md border border-purple-400';
+            } else {
+                rankBadge.innerText = '🔍 باحث مبتدئ';
+                rankBadge.className = 'inline-block px-2 py-0.5 text-xs font-bold bg-slate-700 text-slate-300 rounded-md border border-slate-600';
+            }
+        }
+
+        function loadQuestion() {
+            const stage = gameStagesData[currentStageIdx];
+            const qObj = stage.questions[currentQuestionInStage];
+
+            firstAttempt = true;
+            feedbackBanner.classList.add('hidden');
+            nextBtn.classList.add('hidden');
+
+            stageTitle.innerText = stage.title;
+            stageIcon.innerText = stage.icon;
+
+            questionNumber.innerText = `السؤال ${currentQuestionInStage + 1} من ${stage.questions.length} في هذه المرحلة`;
+            questionText.innerText = qObj.q;
+
+            // Toggle Interactive Containers if required by stage
+            if (stage.showPunnett) {
+                punnettContainer.classList.remove('hidden');
+            } else {
+                punnettContainer.classList.add('hidden');
+            }
+
+            if (stage.showDataTable) {
+                dataTableContainer.classList.remove('hidden');
+            } else {
+                dataTableContainer.classList.add('hidden');
+            }
+
+            // Render Option Buttons
+            optionsContainer.innerHTML = '';
+            qObj.opts.forEach((optStr, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn w-full p-3.5 rounded-2xl bg-slate-900/80 border border-slate-700/80 hover:bg-slate-800 text-right text-sm font-semibold text-slate-200 flex items-center justify-between gap-2';
+                btn.innerHTML = `<span>${optStr}</span><span class="text-xs text-slate-500 border border-slate-700 px-2 py-0.5 rounded-lg">اختيار</span>`;
+                
+                btn.addEventListener('click', () => handleOptionSelect(idx, btn));
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function handleOptionSelect(selectedIdx, btnElement) {
+            audio.init();
+            const stage = gameStagesData[currentStageIdx];
+            const qObj = stage.questions[currentQuestionInStage];
+
+            const allOptBtns = optionsContainer.querySelectorAll('button');
+
+            if (selectedIdx === qObj.correct) {
+                audio.playCorrect();
+                btnElement.className = 'option-btn w-full p-3.5 rounded-2xl bg-emerald-900/50 border-2 border-emerald-400 text-right text-sm font-bold text-emerald-200 flex items-center justify-between';
+                btnElement.innerHTML += `<span class="text-emerald-400 text-lg">✓</span>`;
+
+                // Add points
+                if (firstAttempt) {
+                    totalScore += 10;
+                } else {
+                    totalScore += 5;
+                }
+                updateHUD();
+
+                // Disable all option buttons
+                allOptBtns.forEach(b => b.disabled = true);
+
+                // Show Feedback
+                feedbackBanner.className = 'p-4 rounded-2xl mb-4 border bg-emerald-950/40 border-emerald-500/40 text-emerald-200 text-sm leading-relaxed';
+                feedbackText.innerText = qObj.exp;
+                feedbackBanner.classList.remove('hidden');
+
+                // Show Next Button
+                nextBtn.classList.remove('hidden');
+            } else {
+                audio.playWrong();
+                btnElement.className = 'option-btn w-full p-3.5 rounded-2xl bg-rose-900/40 border border-rose-500/60 text-right text-sm font-semibold text-rose-300 opacity-80';
+                btnElement.disabled = true;
+
+                firstAttempt = false;
+
+                feedbackBanner.className = 'p-3 rounded-2xl mb-4 border bg-rose-950/40 border-rose-500/40 text-rose-200 text-xs leading-relaxed';
+                feedbackText.innerText = 'حاول مرة أخرى! فكّر جيداً في المفهوم الجيني المذكور.';
+                feedbackBanner.classList.remove('hidden');
+            }
+        }
+
+        // Handle Next Button
+        nextBtn.addEventListener('click', () => {
+            audio.playClick();
+            const stage = gameStagesData[currentStageIdx];
+
+            if (currentQuestionInStage < stage.questions.length - 1) {
+                currentQuestionInStage++;
+                loadQuestion();
+            } else if (currentStageIdx < gameStagesData.length - 1) {
+                currentStageIdx++;
+                currentQuestionInStage = 0;
+                updateHUD();
+                loadQuestion();
+            } else {
+                showFinalResults();
+            }
+        });
+
+        // Hint Modal Logic
+        document.getElementById('hint-btn').addEventListener('click', () => {
+            audio.playClick();
+            const stage = gameStagesData[currentStageIdx];
+            hintTextContent.innerText = stage.hint;
+            hintModal.classList.remove('hidden');
+            hintModal.classList.add('flex');
+        });
+
+        document.getElementById('close-hint-btn').addEventListener('click', closeHint);
+        document.getElementById('confirm-hint-btn').addEventListener('click', closeHint);
+
+        function closeHint() {
+            audio.playClick();
+            hintModal.classList.add('hidden');
+            hintModal.classList.remove('flex');
+        }
+
+        function showFinalResults() {
+            quizCard.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+
+            document.getElementById('final-score').innerText = totalScore;
+
+            const badgeIcon = document.getElementById('final-badge-icon');
+            const finalTitle = document.getElementById('final-title');
+            const finalSubtitle = document.getElementById('final-subtitle');
+            const finalRank = document.getElementById('final-rank');
+
+            let rankName = 'باحث مبتدئ 🔍';
+            if (totalScore >= 100) {
+                badgeIcon.innerText = '🏆';
+                finalTitle.innerText = 'خبير مختبر مندل العبقري!';
+                finalSubtitle.innerText = 'أداء استثنائي وفهم عميق وشامل لجميع شفرات ومربعات الوراثة!';
+                rankName = 'خبير مختبر مندل 🏆';
+            } else if (totalScore >= 70) {
+                badgeIcon.innerText = '🔬';
+                finalTitle.innerText = 'عالم وراثة ناشئ متألق!';
+                finalSubtitle.innerText = 'لديك مهارات ممتازة في تحليل الأليلات ومربعات بانيت!';
+                rankName = 'عالم وراثة ناشئ 🔬';
+            } else if (totalScore >= 40) {
+                badgeIcon.innerText = '🧬';
+                finalTitle.innerText = 'محقق وراثي ناجح!';
+                finalSubtitle.innerText = 'نتيجة طيبة ويمكنك تطوير مهاراتك لتحقيق الوسام الأفضل.';
+                rankName = 'محقق وراثي 🧬';
+            } else {
+                badgeIcon.innerText = '🔍';
+                finalTitle.innerText = 'باحث مبتدئ!';
+                finalSubtitle.innerText = 'استكشفت المختبر ويمكنك إعادة التجربة لتحسين نقاطك.';
+                rankName = 'باحث مبتدئ 🔍';
+            }
+
+            finalRank.innerText = rankName;
+
+            // Populate Completed Badges List
+            const badgesList = document.getElementById('badges-list');
+            badgesList.innerHTML = '';
+            gameStagesData.forEach(stg => {
+                const badgeItem = document.createElement('div');
+                badgeItem.className = 'bg-slate-950 p-2 rounded-xl border border-slate-800 flex items-center gap-2 text-emerald-400';
+                badgeItem.innerHTML = `<span>${stg.icon}</span> <span>مرحلة ${stg.id}: مكتملة ✓</span>`;
+                badgesList.appendChild(badgeItem);
+            });
+        }
+
+        // Restart Game
+        document.getElementById('restart-game-btn').addEventListener('click', () => {
+            audio.playClick();
+            resultScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+        });
+    </script>
+</body>
+</html>
